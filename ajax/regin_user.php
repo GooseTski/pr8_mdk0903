@@ -1,32 +1,56 @@
+php
 <?php
-	session_start();
-	include("../settings/connect_datebase.php");
-	
-	$login = $_POST['login'];
-	$password = $_POST['password'];
-	
-	$checkPassword = preg_match(
-		'/(?=.*[0-9])(?=.*[!@#$%^&*\-_=])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z!@#$%^&*\-_=]{8,}$/', 
-		$password);
-	
-	if($checkPassword == false) {
-		exit();
-	}
-	$password = password_hash($password,PASSWORD_DEFAULT);
-	// ищем пользователя
-	$query_user = $mysqli->query("SELECT * FROM `users` WHERE `login`='".$login."'");
-	$id = -1;
-	
-	if($user_read = $query_user->fetch_row()) {
-		echo $id;
-	} else {
-		$mysqli->query("INSERT INTO `users`(`login`, `password`, `roll`) VALUES ('".$login."', '".$password."', 0)");
-		
-		$query_user = $mysqli->query("SELECT * FROM `users` WHERE `login`='".$login."' AND `password`= '".$password."';");
-		$user_new = $query_user->fetch_row();
-		$id = $user_new[0];
-			
-		if($id != -1) $_SESSION['user'] = $id; // запоминаем пользователя
-		echo $id;
-	}
+session_start();
+include("../settings/connect_datebase.php");
+
+$login = $_POST['login'];
+$password = $_POST['password'];
+
+
+$checkPassword = preg_match(
+    '/(?=.*[0-9])(?=.*[!@#$%^&*\-_=])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z!@#$%^&*\-_=]{8,}$/', 
+    $password);
+
+if($checkPassword == false) {
+    exit();
+}
+
+$password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+
+$stmt = $mysqli->prepare("SELECT id FROM `users` WHERE `login` = ?");
+$stmt->bind_param("s", $login);
+$stmt->execute();
+$stmt->store_result();
+
+$id = -1;
+
+if($stmt->num_rows > 0) {
+    echo $id; 
+    $stmt->close();
+} else {
+    $stmt->close();
+    
+
+    $stmt2 = $mysqli->prepare("INSERT INTO `users`(`login`, `password`, `roll`, `token`) VALUES (?, ?, 0, '')");
+    $stmt2->bind_param("ss", $login, $password_hash);
+    
+    if($stmt2->execute()) {
+        $id = $mysqli->insert_id;
+        $_SESSION['user'] = $id;
+        
+        
+        $token = password_hash($id . time(), PASSWORD_DEFAULT);
+        $_SESSION['token'] = $token;
+        
+        
+        $stmt3 = $mysqli->prepare("UPDATE `users` SET `token` = ? WHERE `id` = ?");
+        $stmt3->bind_param("si", $token, $id);
+        $stmt3->execute();
+        $stmt3->close();
+    }
+    $stmt2->close();
+}
+
+echo $id;
 ?>

@@ -1,6 +1,22 @@
 <?php
 	session_start();
 	include("./settings/connect_datebase.php");
+
+	if (isset($_SESSION['user'])) {
+		if($_SESSION['user'] == -1) {
+			header("Location: login.php");
+		} else {
+			// проверяем пользователя, если админ выкидываем на админа
+			$user_to_query = $mysqli->query("SELECT `roll`, `token` FROM `users` WHERE `id` = ".$_SESSION['user']);
+			$user_to_read = $user_to_query->fetch_row();
+			
+			if($_SESSION['token'] != $user_to_read[1]){
+				session_destroy();
+				header("Location: login.php");
+				exit;
+			}
+		}
+ 	} else header("Location: login.php");
 ?>
 <!DOCTYPE HTML>
 <html>

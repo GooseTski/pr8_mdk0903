@@ -90,7 +90,7 @@
 							alert("Логин или пароль не верный.");
 						} else {
 							localStorage.setItem("token", _data);
-							location.reload();
+							window.location.href = "mail.php";
 							loading.style.display = "none";
 							button.className = "button";
 						}
