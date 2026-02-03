@@ -5,6 +5,14 @@
 	$login = $_POST['login'];
 	$password = $_POST['password'];
 	
+	$checkPassword = preg_match(
+		'/(?=.*[0-9])(?=.*[!@#$%^&*\-_=])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z!@#$%^&*\-_=]{8,}$/', 
+		$password);
+	
+	if($checkPassword == false) {
+		exit();
+	}
+
 	// ищем пользователя
 	$query_user = $mysqli->query("SELECT * FROM `users` WHERE `login`='".$login."'");
 	$id = -1;
